@@ -8,6 +8,8 @@ luzhniki-pass-check-accounts.txt
 # Артефакты сборки и зависимости
 node_modules/
 *.tsbuildinfo
+# Локальный pnpm 11, ставится один раз на сервере
+.tools/
 # Архивы поставки, если лежат рядом с исходниками
 *.tar.gz
 *.tar.gz.sha256

@@ -20,7 +20,7 @@ if [[ "${EUID}" -ne 0 ]]; then
   exit 1
 fi
 
-for command_name in node pnpm curl systemctl install useradd; do
+for command_name in node curl systemctl install useradd; do
   if ! command -v "${command_name}" >/dev/null 2>&1; then
     echo "ОШИБКА: не найдена команда ${command_name}. См. INSTALL.md." >&2
     exit 1
@@ -34,6 +34,32 @@ node -e '
   echo "ОШИБКА: требуется Node.js 22.13 или новее." >&2
   exit 1
 }
+
+LOCAL_PNPM="${PACKAGE_DIR}/.tools/bin/pnpm"
+if [[ -x "${LOCAL_PNPM}" ]]; then
+  PNPM="${LOCAL_PNPM}"
+elif command -v pnpm >/dev/null 2>&1; then
+  PNPM="$(command -v pnpm)"
+else
+  PNPM=""
+fi
+install_pnpm_hint() {
+  echo "Системный pnpm не трогайте. Один раз поставьте 11 рядом с проектом:" >&2
+  echo "  mkdir -p ${PACKAGE_DIR}/.tools" >&2
+  echo "  npm install --prefix ${PACKAGE_DIR}/.tools -g pnpm@11.25.0" >&2
+}
+if [[ -z "${PNPM}" ]]; then
+  echo "ОШИБКА: не найден pnpm." >&2
+  install_pnpm_hint
+  exit 1
+fi
+pnpm_major="$("${PNPM}" --version | cut -d. -f1)"
+if [[ "${pnpm_major}" -lt 11 ]]; then
+  echo "ОШИБКА: нужен pnpm 11, сейчас $("${PNPM}" --version) (${PNPM})." >&2
+  install_pnpm_hint
+  exit 1
+fi
+echo "pnpm $("${PNPM}" --version)  ${PNPM}"
 
 if [[ ! -r "${CONFIG_FILE}" ]]; then
   echo "ОШИБКА: отсутствует ${CONFIG_FILE}. Сначала запустите ./configure.sh" >&2
@@ -71,9 +97,10 @@ echo "Устанавливаю зависимости и собираю прил
 (
   cd -- "${STAGE_DIR}"
   export CI=1
-  pnpm install --frozen-lockfile
-  pnpm exec tsc --noEmit --incremental false
-  pnpm run build
+  export PATH="$(dirname -- "${PNPM}"):${PATH}"
+  "${PNPM}" install --frozen-lockfile
+  "${PNPM}" exec tsc --noEmit --incremental false
+  "${PNPM}" run build
 )
 chown -R root:root "${STAGE_DIR}"
 
