@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+*.env
+!*.env.example
+luzhniki-pass-check.env
+luzhniki-pass-check-accounts.txt
+# Артефакты сборки и зависимости
+node_modules/
+*.tsbuildinfo
+# Архивы поставки, если лежат рядом с исходниками
+*.tar.gz
+*.tar.gz.sha256
+# ОС / редакторы
+.DS_Store
+Thumbs.db
+Desktop.ini
