@@ -11,6 +11,10 @@ WorkingDirectory=/opt/luzhniki-pass-check/app
 EnvironmentFile=/etc/luzhniki-pass-check.env
 Environment=NODE_ENV=production
 Environment=SITES_RUNTIME_ROOT=/opt/luzhniki-pass-check/app/.sites-runtime
+Environment=HOME=/opt/luzhniki-pass-check/app/.sites-runtime/home
+Environment=XDG_CONFIG_HOME=/opt/luzhniki-pass-check/app/.sites-runtime/xdg-config
+Environment=XDG_CACHE_HOME=/opt/luzhniki-pass-check/app/.sites-runtime/xdg-cache
+Environment=TMPDIR=/opt/luzhniki-pass-check/app/.sites-runtime/tmp
 ExecStart=/opt/luzhniki-pass-check/app/deploy/start.sh
 Restart=on-failure
 RestartSec=3

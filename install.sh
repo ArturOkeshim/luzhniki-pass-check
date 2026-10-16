@@ -134,7 +134,11 @@ mv -- "${STAGE_DIR}" "${APP_DIR}"
 SWAPPED=1
 
 install -d -o "${SERVICE_USER}" -g "${SERVICE_USER}" -m 0700 \
-  "${APP_DIR}/.sites-runtime"
+  "${APP_DIR}/.sites-runtime" \
+  "${APP_DIR}/.sites-runtime/home" \
+  "${APP_DIR}/.sites-runtime/xdg-config" \
+  "${APP_DIR}/.sites-runtime/xdg-cache" \
+  "${APP_DIR}/.sites-runtime/tmp"
 install -o root -g root -m 0644 \
   "${APP_DIR}/deploy/luzhniki-pass-check.service" \
   "/etc/systemd/system/${SERVICE_NAME}.service"
@@ -143,7 +147,7 @@ systemctl daemon-reload
 systemctl enable --now "${SERVICE_NAME}.service"
 
 health_json=""
-for _attempt in $(seq 1 30); do
+for _attempt in $(seq 1 60); do
   if health_json="$(curl --fail --silent --show-error \
     --connect-timeout 2 --max-time 5 \
     http://127.0.0.1:8788/api/auth/status 2>/dev/null)"; then
@@ -151,6 +155,13 @@ for _attempt in $(seq 1 30); do
   fi
   sleep 1
 done
+
+if [[ -z "${health_json}" ]]; then
+  systemctl --no-pager --full status "${SERVICE_NAME}.service" || true
+  journalctl -u "${SERVICE_NAME}.service" -n 80 --no-pager || true
+  echo "ОШИБКА: сервис не ответил на http://127.0.0.1:8788/api/auth/status" >&2
+  exit 1
+fi
 
 printf '%s' "${health_json}" | node -e '
   let body = "";
@@ -162,7 +173,7 @@ printf '%s' "${health_json}" | node -e '
   });
 ' || {
   systemctl --no-pager --full status "${SERVICE_NAME}.service" || true
-  echo "ОШИБКА: сервис не прошёл локальную проверку." >&2
+  echo "ОШИБКА: сервис ответил, но проверка /api/auth/status не прошла: ${health_json}" >&2
   exit 1
 }
 
